@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+import requests
 
 app = Flask(__name__)
 
@@ -24,6 +25,21 @@ def webhook():
         resposta = "Hmm... você tá meio saidinho hoje, hein? Me conta mais..."
     else:
         resposta = "Awn, adorei sua mensagem... me conta mais sobre isso!"
+    # Enviar mensagem de volta via UltraMSG
+    instance_id = "instance114233"
+    token = "o5ssmoftmlqij6xl"
+
+    url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
+    payload = {
+        "to": phone,
+        "body": resposta
+    }
+
+    headers = {
+        "Content-Type": "application/json"
+    }
+
+    requests.post(url, json=payload, headers=headers)
 
     print(f"Resposta enviada: {resposta}")
 
