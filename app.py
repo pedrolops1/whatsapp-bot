@@ -7,10 +7,10 @@ app = Flask(__name__)
 ULTRAMSG_INSTANCE_ID = "instance114233"
 ULTRAMSG_TOKEN = "o5ssmoftmlqij6xl"
 
-# >>> SUA NOVA API KEY DO OPENROUTER
+# >>> NOVA API KEY DO OPENROUTER
 OPENROUTER_API_KEY = "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"
 
-# >>> Número autorizado para teste
+# >>> Número autorizado
 NUMERO_AUTORIZADO = "+5524999797305"
 
 # >>> Memória por telefone
@@ -19,16 +19,17 @@ conversas = {}
 @app.route("/", methods=["POST"])
 def webhook():
     data = request.get_json()
-    
-    # Adicionando log para depuração
     print("Recebido webhook:", data)
-    
-    phone = data.get("data", {}).get("from")  # Exemplo: '+5524999797305'
+
+    raw_phone = data.get("data", {}).get("from")  # ex: '5524999797305@c.us'
     msg = data.get("data", {}).get("body")
 
-    # Verificando se a mensagem e número são válidos
+    # Remove o sufixo @c.us e adiciona o +
+    phone = "+" + raw_phone.replace("@c.us", "") if raw_phone else None
+
     if phone == NUMERO_AUTORIZADO and msg:
-        print(f"Mensagem recebida de {phone}: {msg}")  # Log de mensagem recebida
+        print(f"Mensagem recebida de {phone}: {msg}")
+
         if phone not in conversas:
             conversas[phone] = []
 
@@ -37,7 +38,7 @@ def webhook():
         resposta = gerar_resposta_com_ia(msg, conversas[phone])
         enviar_mensagem(phone, resposta)
     else:
-        print(f"Mensagem ou número não autorizado: {phone}, {msg}")  # Log de número ou mensagem não autorizado
+        print(f"Mensagem ou número não autorizado: {raw_phone}, {msg}")
 
     return "OK", 200
 
@@ -73,10 +74,8 @@ Seja leve, charmosa, com um toque carinhoso e responda no estilo de uma conversa
 
     try:
         resposta = requests.post(url, headers=headers, json=body)
-        
-        # Logando a resposta da API
         if resposta.status_code == 200:
-            print("Resposta da IA:", resposta.json())  # Log da resposta da IA
+            print("Resposta da IA:", resposta.json())
             return resposta.json()["choices"][0]["message"]["content"]
         else:
             print("Erro OpenRouter:", resposta.text)
@@ -93,16 +92,13 @@ def enviar_mensagem(phone, message):
         "body": message
     }
 
-    # Logando antes de enviar a mensagem
     print(f"Enviando mensagem para {phone}: {message}")
     response = requests.post(url, data=payload)
 
-    # Verificando o status da resposta
     if response.status_code == 200:
         print(f"Mensagem enviada para {phone}")
     else:
         print(f"Erro ao enviar mensagem para {phone}: {response.text}")
 
-# Verificando se o servidor está rodando corretamente
 if __name__ == "__main__":
     app.run(debug=True)
