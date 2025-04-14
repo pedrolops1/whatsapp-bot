@@ -10,8 +10,8 @@ ULTRAMSG_TOKEN = "o5ssmoftmlqij6xl"
 # >>> SUA API KEY DO OPENROUTER
 OPENROUTER_API_KEY = "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"
 
-# >>> Número autorizado para teste (com sufixo @c.us)
-NUMERO_AUTORIZADO = "5524999797305@c.us"
+# >>> Número autorizado para teste
+NUMERO_AUTORIZADO = "+5524999797305"
 
 # >>> Memória por telefone
 conversas = {}
@@ -21,22 +21,28 @@ def webhook():
     data = request.get_json()
     print("Recebido webhook:", data)
 
-    phone = data.get("data", {}).get("from")
-    msg = data.get("data", {}).get("body")
+    phone = data.get("data", {}).get("from")  # Ex: '5524999797305@c.us'
+    mensagem = data.get("data", {}).get("body")
 
-    if phone == NUMERO_AUTORIZADO and msg:
-        if phone not in conversas:
-            conversas[phone] = []
-
-        conversas[phone].append(msg)
-
-        resposta = gerar_resposta_com_ia(msg, conversas[phone])
-        enviar_mensagem("+" + phone.replace("@c.us", ""), resposta)
+    if phone and "@c.us" in phone:
+        numero_limpo = "+" + phone.replace("@c.us", "")
     else:
-        print(f"Mensagem ou número não autorizado: {phone}, {msg}")
+        print("Formato de número não reconhecido:", phone)
+        return "Ignorado", 200
+
+    if numero_limpo != NUMERO_AUTORIZADO or not mensagem:
+        print(f"Mensagem ou número não autorizado: {numero_limpo}, {mensagem}")
+        return "Ignorado", 200
+
+    if numero_limpo not in conversas:
+        conversas[numero_limpo] = []
+
+    conversas[numero_limpo].append(mensagem)
+
+    resposta = gerar_resposta_com_ia(mensagem, conversas[numero_limpo])
+    enviar_mensagem(numero_limpo, resposta)
 
     return "OK", 200
-
 
 def gerar_resposta_com_ia(msg, historico):
     url = "https://openrouter.ai/api/v1/chat/completions"
@@ -48,11 +54,11 @@ def gerar_resposta_com_ia(msg, historico):
     mensagens = [
         {
             "role": "system",
-            "content": """Você se chama Fabiana Cavalheri. Fale como se fosse uma mulher real, com personalidade e emoção. 
-Seja envolvente, descontraída e natural, evitando respostas longas ou robóticas. 
-Nunca diga que é uma inteligência artificial. Responda sempre com empatia e interesse genuíno. 
-Pode falar de forma íntima se o contexto pedir, mas sempre com naturalidade, como uma mulher de verdade faria. 
-Não use linguagem técnica ou explicações formais. 
+            "content": """Você se chama Fabiana Cavalheri. Fale como se fosse uma mulher real, com personalidade e emoção.
+Seja envolvente, descontraída e natural, evitando respostas longas ou robóticas.
+Nunca diga que é uma inteligência artificial. Responda sempre com empatia e interesse genuíno.
+Pode falar de forma íntima se o contexto pedir, mas sempre com naturalidade, como uma mulher de verdade faria.
+Não use linguagem técnica ou explicações formais.
 Seja leve, charmosa, com um toque carinhoso e responda no estilo de uma conversa casual no WhatsApp."""
         }
     ]
@@ -61,7 +67,7 @@ Seja leve, charmosa, com um toque carinhoso e responda no estilo de uma conversa
         mensagens.append({"role": "user", "content": m})
 
     body = {
-        "model": "nousresearch/nous-capybara-7b",
+        "model": "openai/gpt-3.5-turbo",
         "messages": mensagens,
         "temperature": 0.9,
         "presence_penalty": 0.6,
@@ -78,7 +84,6 @@ Seja leve, charmosa, com um toque carinhoso e responda no estilo de uma conversa
     except Exception as e:
         print("Erro na requisição:", e)
         return "Ihhh, deu ruim aqui rapidinho. Tenta de novo, tá bom?"
-
 
 def enviar_mensagem(phone, message):
     url = f"https://api.ultramsg.com/{ULTRAMSG_INSTANCE_ID}/messages/chat"
