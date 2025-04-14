@@ -1,47 +1,35 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request
 import requests
 
 app = Flask(__name__)
 
-@app.route("/", methods=["GET"])
-def home():
-    return "Bot funcionando!"
+ULTRAMSG_INSTANCE_ID = "instance114233"
+ULTRAMSG_TOKEN = "o5ssmoftmlqij6xl"
 
-@app.route("/", methods=["POST"])
+@app.route('/', methods=['POST'])
 def webhook():
     data = request.get_json()
-    phone = data.get('data', {}).get('from')
+    phone = data.get('data', {}).get('from')  # ex: '5524999797305'
     message = data.get('data', {}).get('body')
 
-    print(f"Mensagem de {phone}: {message}")
+    if phone and message:
+        resposta = gerar_resposta(message)
+        enviar_mensagem(phone, resposta)
 
-    resposta = ""
+    return 'OK', 200
 
-    if "oi" in message.lower():
-        resposta = "Oi amor, tudo bem?"
-    elif "tá aí" in message.lower() or "ta ai" in message.lower():
-        resposta = "Tô sim, tava pensando em você..."
-    elif any(palavra in message.lower() for palavra in ["gostosa", "safada", "delícia", "tesão"]):
-        resposta = "Hmm... você tá meio saidinho hoje, hein? Me conta mais..."
-    else:
-        resposta = "Awn, adorei sua mensagem... me conta mais sobre isso!"
+def gerar_resposta(msg):
+    # Aqui você pode personalizar suas respostas automáticas
+    return f"Você disse: {msg}"
 
-    print(f"Resposta enviada: {resposta}")
-
-    # Enviar resposta via UltraMSG
-    instance_id = "instance114233"
-    token = "o5ssmoftmlqij6xl"
-
-    url = f"https://api.ultramsg.com/{instance_id}/messages/chat"
+def enviar_mensagem(phone, texto):
+    url = f"https://api.ultramsg.com/{ULTRAMSG_INSTANCE_ID}/messages/chat"
     payload = {
+        "token": ULTRAMSG_TOKEN,
         "to": phone,
-        "body": resposta
+        "body": texto
     }
+    requests.post(url, data=payload)
 
-    headers = {
-        "Content-Type": "application/json"
-    }
-
-    requests.post(url, json=payload, headers=headers)
-
-    return jsonify({"resposta": resposta}), 200
+if __name__ == '__main__':
+    app.run()
