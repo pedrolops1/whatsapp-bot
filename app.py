@@ -9,13 +9,13 @@ def home():
 
 @app.route("/", methods=["POST"])
 def webhook():
-    data = request.get_json()
+        data = request.get_json()
     phone = data.get('data', {}).get('from')
     message = data.get('data', {}).get('body')
 
     print(f"Mensagem de {phone}: {message}")
 
-        resposta = ""
+    resposta = ""
 
     if "oi" in message.lower():
         resposta = "Oi amor, tudo bem?"
@@ -25,7 +25,10 @@ def webhook():
         resposta = "Hmm... você tá meio saidinho hoje, hein? Me conta mais..."
     else:
         resposta = "Awn, adorei sua mensagem... me conta mais sobre isso!"
-    # Enviar mensagem de volta via UltraMSG
+
+    print(f"Resposta enviada: {resposta}")
+
+    # Enviar resposta via UltraMSG
     instance_id = "instance114233"
     token = "o5ssmoftmlqij6xl"
 
@@ -41,6 +44,4 @@ def webhook():
 
     requests.post(url, json=payload, headers=headers)
 
-    print(f"Resposta enviada: {resposta}")
-
-    return jsonify({"resposta": "Mensagem recebida com sucesso!"}), 200
+    return jsonify({"resposta": resposta}), 200
