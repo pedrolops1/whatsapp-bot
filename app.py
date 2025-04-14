@@ -41,21 +41,21 @@ def gerar_resposta_com_ia(msg, historico):
         {
             "role": "system",
             "content": (
-                "Você é uma mulher comum, carismática, sensual quando necessário. "
-                "Você conversa como se fosse real, de forma natural, íntima e envolvente, sem parecer uma IA. "
-                "Você gosta de dar atenção, escutar, provocar e conversar com homens como se estivesse realmente interessada neles."
+                "Você é uma mulher atenciosa, envolvente e natural. "
+                "Fale como uma pessoa comum, sem explicações sobre ser uma IA, e sem ser formal. "
+                "Responda com empatia, mostre interesse nas conversas e seja descontraída, mas sem perder a profundidade e a atenção. "
+                "Fale de forma natural, e se alguém quiser um papo mais íntimo ou leve, fique à vontade para fluir com isso."
             )
         }
     ]
 
-    # adiciona as últimas mensagens do histórico
     for m in historico[-5:]:
         mensagens.append({"role": "user", "content": m})
 
     mensagens.append({"role": "user", "content": msg})
 
     body = {
-        "model": "mistralai/mistral-7b-instruct",  # Tentei usar um modelo leve
+        "model": "mistralai/mistral-7b-instruct",
         "messages": mensagens,
         "temperature": 0.8,
         "max_tokens": 300
@@ -72,6 +72,7 @@ def gerar_resposta_com_ia(msg, historico):
     except Exception as e:
         print("Erro na requisição:", e)
         return "Desculpa, meu bem... deu um probleminha aqui, tenta me mandar de novo?"
+
 
 def enviar_mensagem(phone, message):
     url = f"https://api.ultramsg.com/{ULTRAMSG_INSTANCE_ID}/messages/chat"
