@@ -55,7 +55,7 @@ def gerar_resposta_com_ia(msg, historico):
     mensagens.append({"role": "user", "content": msg})
 
     body = {
-        "model": "openrouter/cinematika-7b",  # ou openrouter/mistral se quiser algo mais leve
+        "model": "mistralai/mistral-7b-instruct",  # ou openrouter/mistral se quiser algo mais leve
         "messages": mensagens,
         "temperature": 0.8,
         "max_tokens": 300
@@ -63,7 +63,13 @@ def gerar_resposta_com_ia(msg, historico):
 
     try:
         resposta = requests.post(url, headers=headers, json=body)
-        return resposta.json()["choices"][0]["message"]["content"]
+
+if resposta.status_code == 200:
+    return resposta.json()["choices"][0]["message"]["content"]
+else:
+    print("Erro OpenRouter:", resposta.text)
+    return "Desculpa, meu bem... deu um probleminha aqui, tenta me mandar de novo?"
+
     except Exception as e:
         return "Desculpa, meu bem... deu um probleminha aqui, tenta me mandar de novo?"
 
