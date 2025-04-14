@@ -9,7 +9,7 @@ def home():
 
 @app.route("/", methods=["POST"])
 def webhook():
-        data = request.get_json()
+    data = request.get_json()
     phone = data.get('data', {}).get('from')
     message = data.get('data', {}).get('body')
 
