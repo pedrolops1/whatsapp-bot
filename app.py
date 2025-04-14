@@ -72,3 +72,18 @@ def gerar_resposta_com_ia(msg, historico):
     except Exception as e:
         print("Erro na requisição:", e)
         return "Desculpa, meu bem... deu um probleminha aqui, tenta me mandar de novo?"
+
+def enviar_mensagem(phone, message):
+    url = f"https://api.ultramsg.com/{ULTRAMSG_INSTANCE_ID}/messages/chat"
+    payload = {
+        "token": ULTRAMSG_TOKEN,
+        "to": phone,
+        "body": message
+    }
+
+    response = requests.post(url, data=payload)
+    
+    if response.status_code == 200:
+        print(f"Mensagem enviada para {phone}")
+    else:
+        print(f"Erro ao enviar mensagem para {phone}: {response.text}")
