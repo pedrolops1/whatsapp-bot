@@ -55,7 +55,7 @@ def gerar_resposta_com_ia(msg, historico):
     mensagens.append({"role": "user", "content": msg})
 
     body = {
-        "model": "mistralai/mistral-7b-instruct",  # ou openrouter/mistral se quiser algo mais leve
+        "model": "mistralai/mistral-7b-instruct",  # Tentei usar um modelo leve
         "messages": mensagens,
         "temperature": 0.8,
         "max_tokens": 300
@@ -64,23 +64,11 @@ def gerar_resposta_com_ia(msg, historico):
     try:
         resposta = requests.post(url, headers=headers, json=body)
 
-if resposta.status_code == 200:
-    return resposta.json()["choices"][0]["message"]["content"]
-else:
-    print("Erro OpenRouter:", resposta.text)
-    return "Desculpa, meu bem... deu um probleminha aqui, tenta me mandar de novo?"
-
+        if resposta.status_code == 200:
+            return resposta.json()["choices"][0]["message"]["content"]
+        else:
+            print("Erro OpenRouter:", resposta.text)
+            return "Desculpa, meu bem... deu um probleminha aqui, tenta me mandar de novo?"
     except Exception as e:
+        print("Erro na requisição:", e)
         return "Desculpa, meu bem... deu um probleminha aqui, tenta me mandar de novo?"
-
-def enviar_mensagem(phone, texto):
-    url = f"https://api.ultramsg.com/{ULTRAMSG_INSTANCE_ID}/messages/chat"
-    payload = {
-        "token": ULTRAMSG_TOKEN,
-        "to": phone,
-        "body": texto
-    }
-    requests.post(url, data=payload)
-
-if __name__ == '__main__':
-    app.run()
