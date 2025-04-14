@@ -4,14 +4,14 @@ import requests
 app = Flask(__name__)
 
 # >>> DADOS DA ULTRAMSG
-ULTRAMSG_INSTANCE_ID = "instance114233"
-ULTRAMSG_TOKEN = "o5ssmoftmlqij6xl"
+ULTRAMSG_INSTANCE_ID = "instance114233"  # Substitua pela sua Instance ID
+ULTRAMSG_TOKEN = "o5ssmoftmlqij6xl"  # Substitua pelo seu Token do UltraMsg
 
-# >>> SUA API KEY DO OPENROUTER
-OPENROUTER_API_KEY = "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"
+# >>> SUA API KEY DO OPENAI
+OPENAI_API_KEY = "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"  # Substitua pela sua API Key do OpenAI
 
 # >>> Número autorizado para teste
-NUMERO_AUTORIZADO = "+5524999797305"
+NUMERO_AUTORIZADO = "+5524999797305"  # Número autorizado para interações
 
 # >>> Memória por telefone
 conversas = {}
@@ -19,7 +19,7 @@ conversas = {}
 @app.route("/", methods=["POST"])
 def webhook():
     data = request.get_json()
-    phone = data.get("data", {}).get("from")  # exemplo: '+5524999797305'
+    phone = data.get("data", {}).get("from")  # Exemplo: '+5524999797305'
     msg = data.get("data", {}).get("body")
 
     if phone == NUMERO_AUTORIZADO and msg:
@@ -35,9 +35,9 @@ def webhook():
 
 
 def gerar_resposta_com_ia(msg, historico):
-    url = "https://openrouter.ai/api/v1/chat/completions"
+    url = "https://api.openai.com/v1/completions"  # API OpenAI para o modelo "nous-hermes"
     headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
         "Content-Type": "application/json"
     }
 
@@ -57,7 +57,7 @@ Seja leve, charmosa, com um toque carinhoso e responda no estilo de uma conversa
         mensagens.append({"role": "user", "content": m})
 
     body = {
-        "model": "openchat/openchat-3.5",
+        "model": "nous-hermes",  # Modelo atualizado para "nous-hermes"
         "messages": mensagens,
         "temperature": 0.9,
         "presence_penalty": 0.6,
@@ -69,7 +69,7 @@ Seja leve, charmosa, com um toque carinhoso e responda no estilo de uma conversa
         if resposta.status_code == 200:
             return resposta.json()["choices"][0]["message"]["content"]
         else:
-            print("Erro OpenRouter:", resposta.text)
+            print("Erro OpenAI:", resposta.text)
             return "Hmm... aconteceu um probleminha aqui. Me chama de novo, amorzinho?"
     except Exception as e:
         print("Erro na requisição:", e)
@@ -90,3 +90,4 @@ def enviar_mensagem(phone, message):
         print(f"Mensagem enviada para {phone}")
     else:
         print(f"Erro ao enviar mensagem para {phone}: {response.text}")
+        
