@@ -11,8 +11,12 @@ ULTRAMSG_TOKEN = "o5ssmoftmlqij6xl"
 # >>> SUA API KEY DO OPENROUTER
 OPENROUTER_API_KEY = "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"
 
-# >>> Número autorizado para teste
-NUMERO_AUTORIZADO = "+5524999797305"
+# >>> Números restritos
+NUMEROS_RESTRITOS = [
+    "+558189115401",
+    "+55249998179830",
+    "+556191223734"
+]
 
 # >>> Configuração SQLite
 DATABASE = 'conversas.db'
@@ -64,8 +68,13 @@ def webhook():
         print("Formato de número não reconhecido:", phone)
         return "Ignorado", 200
 
-    if numero_limpo != NUMERO_AUTORIZADO or not mensagem:
-        print(f"Mensagem ou número não autorizado: {numero_limpo}, {mensagem}")
+    # Verificar se o número está na lista de números restritos
+    if numero_limpo in NUMEROS_RESTRITOS:
+        print(f"Conversa com número restrito detectada: {numero_limpo}")
+        return "Ignorado", 200
+
+    if not mensagem:
+        print(f"Mensagem vazia do número {numero_limpo}")
         return "Ignorado", 200
 
     # Obter o histórico de conversa e a última pergunta feita
