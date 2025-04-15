@@ -23,17 +23,18 @@ def init_db():
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS conversas (
                     numero TEXT PRIMARY KEY,
-                    historico TEXT
+                    historico TEXT,
+                    ultima_pergunta TEXT
                   )''')
     conn.commit()
     conn.close()
 
 # Função para salvar a conversa no banco de dados
-def salvar_conversa(numero, historico):
+def salvar_conversa(numero, historico, ultima_pergunta):
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
-    c.execute('''INSERT OR REPLACE INTO conversas (numero, historico)
-                 VALUES (?, ?)''', (numero, str(historico)))
+    c.execute('''INSERT OR REPLACE INTO conversas (numero, historico, ultima_pergunta)
+                 VALUES (?, ?, ?)''', (numero, str(historico), ultima_pergunta))
     conn.commit()
     conn.close()
 
@@ -41,13 +42,13 @@ def salvar_conversa(numero, historico):
 def obter_conversa(numero):
     conn = sqlite3.connect(DATABASE)
     c = conn.cursor()
-    c.execute("SELECT historico FROM conversas WHERE numero = ?", (numero,))
+    c.execute("SELECT historico, ultima_pergunta FROM conversas WHERE numero = ?", (numero,))
     resultado = c.fetchone()
     conn.close()
     if resultado:
-        return eval(resultado[0])  # Retorna o histórico como lista
+        return eval(resultado[0]), resultado[1]  # Retorna o histórico como lista e a última pergunta
     else:
-        return []
+        return [], ""
 
 @app.route("/", methods=["POST"])
 def webhook():
@@ -67,22 +68,22 @@ def webhook():
         print(f"Mensagem ou número não autorizado: {numero_limpo}, {mensagem}")
         return "Ignorado", 200
 
-    # Obter o histórico de conversa do banco de dados
-    historico = obter_conversa(numero_limpo)
+    # Obter o histórico de conversa e a última pergunta feita
+    historico, ultima_pergunta = obter_conversa(numero_limpo)
     historico.append(mensagem)
 
-    # Gerar a resposta com IA com o histórico atualizado
-    resposta = gerar_resposta_com_ia(mensagem, historico)
+    # Gerar a resposta com IA com o histórico atualizado e verificando a última pergunta
+    resposta = gerar_resposta_com_ia(mensagem, historico, ultima_pergunta)
     
-    # Salvar o histórico no banco de dados
-    salvar_conversa(numero_limpo, historico)
+    # Salvar o histórico e a última pergunta no banco de dados
+    salvar_conversa(numero_limpo, historico, resposta)
 
     # Enviar a resposta
     enviar_mensagem(numero_limpo, resposta)
 
     return "OK", 200
 
-def gerar_resposta_com_ia(msg, historico):
+def gerar_resposta_com_ia(msg, historico, ultima_pergunta):
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {OPENROUTER_API_KEY}",
@@ -97,12 +98,21 @@ Seja envolvente, descontraída e natural, evitando respostas longas ou robótica
 Nunca diga que é uma inteligência artificial. Responda sempre com empatia e interesse genuíno.
 Pode falar de forma íntima se o contexto pedir, mas sempre com naturalidade, como uma mulher de verdade faria.
 Não use linguagem técnica ou explicações formais.
-Seja leve, charmosa, com um toque carinhoso e responda no estilo de uma conversa casual no WhatsApp."""
+Seja leve, charmosa, com um toque carinhoso e responda no estilo de uma conversa casual no WhatsApp.
+Use abreviações naturais como "vc", "tb", "pq", etc. e evite falar de maneira muito formal ou cheia de detalhes. Seja mais descomplicada."""
         }
     ]
 
     for m in historico[-5:]:
         mensagens.append({"role": "user", "content": m})
+
+    # Se a última pergunta foi repetitiva, alteramos a maneira de perguntar
+    if "Como foi o seu dia?" in ultima_pergunta:
+        nova_pergunta = "E aí, teve algo de novo hoje?"
+    else:
+        nova_pergunta = "Como vc tá? Tudo certo?"
+
+    mensagens.append({"role": "user", "content": nova_pergunta})
 
     body = {
         "model": "openai/gpt-3.5-turbo",
@@ -141,3 +151,4 @@ def enviar_mensagem(phone, message):
 if __name__ == "__main__":
     init_db()  # Inicializa o banco de dados quando a aplicação iniciar
     app.run(debug=True)
+    
