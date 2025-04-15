@@ -148,7 +148,8 @@ def enviar_mensagem(phone, message):
     else:
         print(f"Erro ao enviar mensagem para {phone}: {response.text}")
 
+init_db()  # Garante que o banco e a tabela sejam criados mesmo no Render
+
 if __name__ == "__main__":
-    init_db()  # Inicializa o banco de dados quando a aplicação iniciar
     app.run(debug=True)
     
