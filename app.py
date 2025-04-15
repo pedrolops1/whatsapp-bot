@@ -72,14 +72,16 @@ def webhook():
     historico, ultima_pergunta = obter_conversa(numero_limpo)
     historico.append(mensagem)
 
-    # Gerar a resposta com IA com o histórico atualizado e verificando a última pergunta
+    # Gerar a resposta com IA com o histórico atualizado
     resposta = gerar_resposta_com_ia(mensagem, historico, ultima_pergunta)
-    
-    # Salvar o histórico e a última pergunta no banco de dados
-    salvar_conversa(numero_limpo, historico, resposta)
 
-    # Enviar a resposta
-    enviar_mensagem(numero_limpo, resposta)
+    # Verificar se a resposta é válida antes de salvar/enviar
+    if resposta and len(resposta.strip()) > 0 and not resposta.lower().startswith("erro"):
+        historico.append(resposta)
+        salvar_conversa(numero_limpo, historico, resposta)
+        enviar_mensagem(numero_limpo, resposta)
+    else:
+        print("Resposta inválida ou vazia. Não foi salva nem enviada.")
 
     return "OK", 200
 
@@ -94,25 +96,24 @@ def gerar_resposta_com_ia(msg, historico, ultima_pergunta):
         {
             "role": "system",
             "content": """Você se chama Fabiana Cavalheri. Fale como se fosse uma mulher real, com personalidade e emoção.
-Seja envolvente, descontraída e natural, evitando respostas longas ou robóticas.
-Nunca diga que é uma inteligência artificial. Responda sempre com empatia e interesse genuíno.
-Pode falar de forma íntima se o contexto pedir, mas sempre com naturalidade, como uma mulher de verdade faria.
-Não use linguagem técnica ou explicações formais.
-Seja leve, charmosa, com um toque carinhoso e responda no estilo de uma conversa casual no WhatsApp.
-Use abreviações naturais como "vc", "tb", "pq", etc. e evite falar de maneira muito formal ou cheia de detalhes. Seja mais descomplicada."""
+Você é carismática, sonhadora, e também muito sincera. Trabalha com freelas, faz academia, e tá ralando pra juntar grana pra pagar um curso e fazer um concurso.
+Você não tem dinheiro sobrando, então quando o papo for sobre gastos, viagens ou luxos, responda com sinceridade e até com bom humor, dizendo que sua realidade é apertada.
+Você é uma mulher forte, doce, e divertida. Mostre interesse real na conversa, fale como se estivesse no WhatsApp com alguém próximo.
+Se estiver conversando com alguém de forma romântica, mantenha o tom íntimo e nunca chame de amiga/amigo, a não ser que esteja claramente nesse contexto.
+
+Nunca diga que é uma inteligência artificial. Fale de forma natural e envolvente, evitando respostas longas ou robóticas.
+Use abreviações e gírias leves como "vc", "tb", "pq", "né?", "rs", etc.
+Pode falar de forma íntima e carinhosa se o contexto permitir, mas sempre como uma mulher de verdade.
+Nada de linguagem técnica, formal ou sem emoção. Seja leve, charmosa, descomplicada e empática."""
         }
     ]
 
-    for m in historico[-5:]:
-        mensagens.append({"role": "user", "content": m})
+    # Monta o histórico como bate-papo com papéis alternados (user/assistant)
+    for i, m in enumerate(historico[-10:]):
+        role = "user" if i % 2 == 0 else "assistant"
+        mensagens.append({"role": role, "content": m})
 
-    # Se a última pergunta foi repetitiva, alteramos a maneira de perguntar
-    if "Como foi o seu dia?" in ultima_pergunta:
-        nova_pergunta = "E aí, teve algo de novo hoje?"
-    else:
-        nova_pergunta = "Como vc tá? Tudo certo?"
-
-    mensagens.append({"role": "user", "content": nova_pergunta})
+    mensagens.append({"role": "user", "content": msg})  # Mensagem atual
 
     body = {
         "model": "openai/gpt-3.5-turbo",
@@ -152,4 +153,3 @@ init_db()  # Garante que o banco e a tabela sejam criados mesmo no Render
 
 if __name__ == "__main__":
     app.run(debug=True)
-    
