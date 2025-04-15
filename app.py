@@ -1,5 +1,6 @@
 from flask import Flask, request
 import requests
+import sqlite3
 
 app = Flask(__name__)
 
@@ -13,8 +14,40 @@ OPENROUTER_API_KEY = "sk-or-v1-b308a62fdf3af85141295447fd8ba5a8e5026f08ee56ec01d
 # >>> Número autorizado para teste
 NUMERO_AUTORIZADO = "+5524999797305"
 
-# >>> Memória por telefone
-conversas = {}
+# >>> Configuração SQLite
+DATABASE = 'conversas.db'
+
+# Função para criar o banco de dados e a tabela de conversas
+def init_db():
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS conversas (
+                    numero TEXT PRIMARY KEY,
+                    historico TEXT
+                  )''')
+    conn.commit()
+    conn.close()
+
+# Função para salvar a conversa no banco de dados
+def salvar_conversa(numero, historico):
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute('''INSERT OR REPLACE INTO conversas (numero, historico)
+                 VALUES (?, ?)''', (numero, str(historico)))
+    conn.commit()
+    conn.close()
+
+# Função para obter o histórico de conversa do banco de dados
+def obter_conversa(numero):
+    conn = sqlite3.connect(DATABASE)
+    c = conn.cursor()
+    c.execute("SELECT historico FROM conversas WHERE numero = ?", (numero,))
+    resultado = c.fetchone()
+    conn.close()
+    if resultado:
+        return eval(resultado[0])  # Retorna o histórico como lista
+    else:
+        return []
 
 @app.route("/", methods=["POST"])
 def webhook():
@@ -34,12 +67,17 @@ def webhook():
         print(f"Mensagem ou número não autorizado: {numero_limpo}, {mensagem}")
         return "Ignorado", 200
 
-    if numero_limpo not in conversas:
-        conversas[numero_limpo] = []
+    # Obter o histórico de conversa do banco de dados
+    historico = obter_conversa(numero_limpo)
+    historico.append(mensagem)
 
-    conversas[numero_limpo].append(mensagem)
+    # Gerar a resposta com IA com o histórico atualizado
+    resposta = gerar_resposta_com_ia(mensagem, historico)
+    
+    # Salvar o histórico no banco de dados
+    salvar_conversa(numero_limpo, historico)
 
-    resposta = gerar_resposta_com_ia(mensagem, conversas[numero_limpo])
+    # Enviar a resposta
     enviar_mensagem(numero_limpo, resposta)
 
     return "OK", 200
@@ -99,3 +137,7 @@ def enviar_mensagem(phone, message):
         print(f"Mensagem enviada para {phone}")
     else:
         print(f"Erro ao enviar mensagem para {phone}: {response.text}")
+
+if __name__ == "__main__":
+    init_db()  # Inicializa o banco de dados quando a aplicação iniciar
+    app.run(debug=True)
