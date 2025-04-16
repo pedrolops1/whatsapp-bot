@@ -8,7 +8,7 @@ app = Flask(__name__)
 ULTRAMSG_INSTANCE_ID = "instance114233"
 ULTRAMSG_TOKEN = "o5ssmoftmlqij6xl"
 
-# >>> SUA API KEY DO OPENROUTER
+# >>> API KEY DO OPENROUTER
 OPENROUTER_API_KEY = "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"
 
 # >>> Números restritos
