@@ -8,14 +8,13 @@ app = Flask(__name__)
 ULTRAMSG_INSTANCE_ID = "instance114233"
 ULTRAMSG_TOKEN = "o5ssmoftmlqij6xl"
 
-# >>> API KEY DO OPENROUTER
+# >>> SUA API KEY DO OPENROUTER
 OPENROUTER_API_KEY = "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"
 
-# >>> Números restritos
-NUMEROS_RESTRITOS = [
-    "+558189115401",
-    "+55249998179830",
-    "+556191223734"
+# >>> Números autorizados
+NUMEROS_AUTORIZADOS = [
+    "+5524999797305",
+    "+556281896450"
 ]
 
 # >>> Configuração SQLite
@@ -68,9 +67,9 @@ def webhook():
         print("Formato de número não reconhecido:", phone)
         return "Ignorado", 200
 
-    # Verificar se o número está na lista de números restritos
-    if numero_limpo in NUMEROS_RESTRITOS:
-        print(f"Conversa com número restrito detectada: {numero_limpo}")
+    # Verificar se o número está na lista de números autorizados
+    if numero_limpo not in NUMEROS_AUTORIZADOS:
+        print(f"Conversa com número não autorizado detectada: {numero_limpo}")
         return "Ignorado", 200
 
     if not mensagem:
@@ -162,3 +161,4 @@ init_db()  # Garante que o banco e a tabela sejam criados mesmo no Render
 
 if __name__ == "__main__":
     app.run(debug=True)
+        
